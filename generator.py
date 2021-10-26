@@ -1,24 +1,28 @@
 import random
 
-from utility import *
-from solver import solver
+from solver import *
+
+global cells_left
 
 
 # Function called to generate a board depending on the given difficulty
 def generate_board(difficulty="normal"):
+    global cells_left
+
     board = [0 for x in range(81)]
+    cells_left = 81
 
     # Generate a full board
     generate_full_board(board, 0)
 
-    # In case the generate full board is illegal, a value error is raised
+    # In case the generated full board is illegal, a value error is raised
     if not check_board(board):
         raise ValueError("Generated full board is not legal")
 
     # Deciding the minimum amount of cells left, depending on the difficulty
     match difficulty:
         case "easy":
-            min_cells_left = 25
+            min_cells_left = 40
         case "normal":
             min_cells_left = 21
         case "hard":
@@ -26,10 +30,21 @@ def generate_board(difficulty="normal"):
         case _:
             raise ValueError("Difficulty argument has not been assigned a proper value")
 
-    # Removes cells until the amount of cells left reaches a given minimum
-    remove_cells(board, min_cells_left)
+    count = 0
+    # Removes cells until the amount of cells left reaches a given value
+    while True:
+        count += 1
+        print(count)
+        board_try = board.copy()
+        remove_cells(board, min_cells_left)
 
-    return board
+        print(f"Cells left: {cells_left}. Minimum cells left: {min_cells_left}")
+        if cells_left == min_cells_left:
+            break
+
+        board = board_try
+
+    return board, cells_left
 
 
 # Function that generates a random full board
@@ -47,14 +62,10 @@ def generate_full_board(board: list, index: int):
         # Assign a random value to the index
         board[index] = numbers[numbers_index]
 
-        # Check if the board is legal, if it is, go the the next index. If it's not try another random number.
-        if check_board(board):
-            # Checking if next index returns a legal board, if it does, the function reached the last index and
-            # generated a legal board. If not, the value assigned to the index does not result in a legal board.
-            if generate_full_board(board, index + 1):
-                break
-            else:
-                numbers_index += 1
+        # Check if the board is legal and if the next index returns a legal board. If both are true, break from the
+        # loop, else try another random value at the index.
+        if check_board(board) and generate_full_board(board, index + 1):
+            break
         else:
             numbers_index += 1
 
@@ -67,32 +78,37 @@ def generate_full_board(board: list, index: int):
     return True
 
 
+# Function that removes cells until a certain amount of cells left has been reached. Makes sure that board is still
+# legal.
 def remove_cells(board: list, min_cells_left: int):
+    global cells_left
+
     cells_left = 81
     index = 0
-    index_list = [x for x in range(81)]
 
+    # Creates a list of all the indux numbers and shuffles it
+    index_list = [x for x in range(81)]
     random.shuffle(index_list)
 
-    while check_board(board) and cells_left > min_cells_left:
+    while check_board(board):
+        # Store the last value at the index, if the new board is found to be illegal.
         last_value = board[index_list[index]]
+
+        # Making a hole at a certain index
         board[index_list[index]] = 0
 
-        # print(f"Index: {index}, index_list: {index_list[index]}")
-        # print(f"Cells left: {cells_left - 1}")
-        # print_board(board)
+        # Solving the board
+        solvable, solved_board, n_solutions = solver_control(board, "multiple")
 
-        # print("")
-
-        if cells_left < 30:
-            solvable, solved_board = solver(board)
-        else:
-            solvable = True
-
-        if solvable:
+        # Checking if the board is solvable and has a unique solution. If it is not, reset the value at the current
+        # index and return the board
+        if solvable and n_solutions == 1:
             cells_left -= 1
             index += 1
-            continue
+
+            # If a certain amount of cells have been emptied, return the board
+            if cells_left == min_cells_left:
+                return board
         else:
             board[index_list[index]] = last_value
             return board

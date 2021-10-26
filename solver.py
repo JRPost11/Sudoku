@@ -1,70 +1,94 @@
 from utility import *
 
+global solved_board, n_solutions
 
-# Function that solves a given board
-def solver(board: list):
+
+# Function that controls the solving of a board
+def solver_control(board: list, mode: str):
     # Create a copy of the given board, since the given board should not be changed.
     board_copy = board.copy()
     # Check if the given board is legal.
     if check_board(board) is not True:
         raise ValueError("Given board is not legal.")
 
+    global solved_board, n_solutions
     solved_board = []
-    number_of_solutions = []
+    n_solutions = 0
 
-    # return solver_help(solved_board, number_of_solutions), solved_board, number_of_solutions
-    # return solver_help2(board_copy, solved_board, number_of_solutions), solved_board
-    return solver_help3(board_copy, solved_board, number_of_solutions), solved_board, number_of_solutions
+    # Depending on the mode, it calls different solver functions.
+    # Mode 'single' is used when it is known that a sudoku has a unique solution.
+    if mode == "single":
+        solvable = solver_single_solution(board_copy)
+
+        return solvable, solved_board, n_solutions
+
+    # Mode 'multiple' is used when the number of solutions is not known and a board's legality needs to be checked.
+    elif mode == "multiple":
+        solvable = solver_multiple_solutions(board_copy)
+
+        return solvable, solved_board, n_solutions
+
+    # If the mode is not defined, an error is raised.
+    else:
+        raise ValueError("Mode has not been assigned properly!")
 
 
-# Solves sudoku. Does not check how many solutions there are. Should only be used for sudoku's where it is known that
+# Solves a sudoku. Does not check how many solutions there are. Should only be used for sudoku's where it is known that
 # there is just one solution
-def solver_help(board: list, n: list):
+def solver_single_solution(board: list):
+    global solved_board, n_solutions
+
+    # Find an empty cell on the given board
     index = find_empty_cell(board)
 
+    # If there are no empty cells left, record the current board and increase the number of solutions
     if not index:
-        n.append('solution')
+        solved_board.append(board)
+        n_solutions += 1
+
         return True
 
+    # Loop through each possible value for the current cell
     for i in range(1, 10):
+        # Check if the given value is possible, if it's not continue to the next value. If it is, assign the value
+        # to the cell and recursively continue.
         if check_cell(board, i, index):
             board[index] = i
 
-            if solver_help(board, n):
+            # Check recursively if the current board layout is correct, if it is return True.
+            if solver_single_solution(board):
                 return True
 
+            # Current board layout does not work out, so reverse the assignment of the value to the cell.
             board[index] = 0
 
+    # If none of the values work for a given cell, the current board layout is wrong.
     return False
 
 
-def solver_help3(board: list, solved_board: list, number_of_solutions: list):
+# Solver which can determine if a sudoku has multiple solutions. Used by the sudoku generation function.
+def solver_multiple_solutions(board: list):
+    global solved_board, n_solutions
+
     index = find_empty_cell(board)
-    # print(f"Index: {index}")
 
-    if not index:
-        # print("Found solution")
-        solved_board.append(board)
-        number_of_solutions.append(0)
-        return 1
+    # If there are no empty cells left, save the board and increase the number of solutions
+    if index is None:
+        solved_board += board
+        n_solutions += 1
+        return True
 
-    if len(number_of_solutions) > 1:
-        return -1
-
+    # Loop through the possible values for the cell
     for number in range(1, 10):
+        # Check if the board is still legal with the given value for the cell. If it is not, try another value. If it is
+        # set the cell to that value.
         if check_cell(board, number, index):
-            # print(f"Number: {number}")
             board[index] = number
 
-            solved = solver_help3(board, solved_board, number_of_solutions)
-
-            if solved == 0 or solved == 1:
+            # Continue recursively until a solution has been found.
+            if solver_multiple_solutions(board):
                 board[index] = 0
             else:
-                return -1
-                # print("Returned, board value not good")
-            # elif solved == 1:
-            #     board[index] = 0
-            # print("Returned, board solved. Trying to find another solution.")
+                return False
 
-    return 0
+    return True

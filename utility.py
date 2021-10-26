@@ -6,6 +6,7 @@ def print_board(board: list):
         print(f"" if (row + 1) % 3 != 0 else f"\n")
 
 
+# Finds the first empty cell on the board by looping through the whole board
 def find_empty_cell(board: list):
     for index in range(81):
         if board[index] == 0:
@@ -47,6 +48,7 @@ def check_board(board: list):
     return True
 
 
+# Checks if the board is still legal given an additional number at a certain index
 def check_cell(board: list, number: int, index: int):
     # Check row
     row = index // 9
@@ -55,12 +57,14 @@ def check_cell(board: list, number: int, index: int):
         if index != column + row * 9 and board[column + row * 9] == number:
             return False
 
+    # Check column
     column = index % 9
 
     for row in range(9):
         if index != column + row * 9 and board[column + row * 9] == number:
             return False
 
+    # Check 3 x 3
     row_tl = index // 9 // 3 * 3
     column_tl = index % 9 // 3 * 3
 

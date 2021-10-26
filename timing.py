@@ -5,18 +5,24 @@ from utility import check_board
 
 
 # Calculates time taken to solve a board
-def time_solver(board: list, number: int, debug=False):
+def time_solver(board: list, number: int, mode: str):
     start = time.time()
-    solvable, solved_board, n = solver(board)
 
-    if len(n) == 1:
-        solvable = 1
-    else:
-        solvable = 0
+    # Solving the board and recording using information
+    solvable, solved_board, n_solutions = solver_control(board, mode)
 
-    print(f"Number of solutions: {len(n)}")
+    # Prints useful information like, solvability, number of solutions, and if there is a unique solution, it prints
+    # the solution. It also prints the time taken to solve the board.
+    print_board(board)
     print(f"Board {number} solvable: {solvable}")
+    print(f"Number of solutions: {n_solutions}")
+
+    if n_solutions == 1:
+        print(f"Solution of board {number}:")
+        print_board(solved_board)
+
     end = time.time()
+
     print(f"Time taken to solve board {number}: {end - start}\n")
 
 
